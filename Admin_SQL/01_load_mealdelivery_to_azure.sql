@@ -4,14 +4,14 @@
 SELECT DB_NAME() AS CurrentDatabase;   -- make sure you are at the right database
 
 -- create master key once
-CREATE MASTER KEY ENCRYPTION BY PASSWORD = 'DA123456789!'; -- change this to a strong password and keep it secure
+CREATE MASTER KEY ENCRYPTION BY PASSWORD = '<your-strong-password>'; -- change this to a strong password and keep it secure
 GO
 
 -- create credential for Azure Blob Storage access
 CREATE DATABASE SCOPED CREDENTIAL MyCred
 WITH IDENTITY = 'SHARED ACCESS SIGNATURE',
---generate SAS token in a short period of time for security reasons: 14/10-14/12-2026
-SECRET = 'sv=2026-02-06&ss=bfqt&srt=sco&sp=rwdlacupiytfx&se=2026-12-14T19:35:28Z&st=2026-10-14T10:20:28Z&spr=https&sig=Izqj1RHHu4lH3ndKNpfPiNk8jT4TEzutYksHYpooV44%3D'; 
+--generate SAS token in a short period of time for security reasons
+SECRET = '<your-SAS-token>'; 
 
 -- verify it exists
 SELECT name
@@ -21,9 +21,12 @@ FROM sys.database_scoped_credentials;
 CREATE EXTERNAL DATA SOURCE MyBlobStorage
 WITH (
     TYPE = BLOB_STORAGE,
-    LOCATION = 'https://stmealdelivery.blob.core.windows.net/data',
+    LOCATION = 'https://stmealdeliverydatasets.blob.core.windows.net/data',
     CREDENTIAL = MyCred
 );
+
+ALTER EXTERNAL DATA SOURCE MyBlobStorage
+SET LOCATION =  'https://stmealdeliverydatasets.blob.core.windows.net/data'
 
 -- verify it exists
 SELECT name, location FROM sys.external_data_sources;
@@ -132,3 +135,7 @@ SELECT COUNT(*) FROM delivery.stock WHERE stocking_date IS NULL;  -- 0
 
 -- Clean up staging table
 DROP TABLE delivery.stock_stage;
+
+-- Remove SQL objects
+DROP EXTERNAL DATA SOURCE MyBlobStorage
+DROP DATABASE SCOPED CREDENTIAL MyCred;
